@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 import re
 import time
 import os
+import concurrent.futures
+
 
 # Identify scraping methodology
 # Navigate to https://www.salary.com/
@@ -51,7 +53,6 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 # Now that you've got a python dictionary, you can index as you would a normal dictionary. So, let's grab the job title, the description, location, and the base compensation statistics.
 
 
-#region extract salary info
 def extract_salary_info(job_title, job_city):
     """Extract and return salary information"""
     template = 'https://www.salary.com/research/salary/benchmark/{}-salary/{}'
@@ -88,13 +89,11 @@ def extract_salary_info(job_title, job_city):
     data = (job_title, location, description, ntile_10, ntile_25, ntile_50, ntile_75, ntile_90)
     return data
 
-#endregion
 
 # Getting all city data
 # Now, let's import a list of cities. I found a list of the top 300+ US cities on Wikipedia, and then I re-formatted the city and state name so that I could easily insert it into this function and url.
 # Now I an iterate over each major city in the US, extract the relevant salary information. I'm going to use the sleep function to create a small delay between each request. It's always a good idea to be a good internet citizen and not bombard a server with requests. Primary out of politeness... but also, being impolite with other peoples data and connections is a good way to get yourself banned from their site. Consolidate into main function
 
-#region main
 def main(job_title):
     """Extract salary data from top us cities"""
     # get the list of largest us cities
@@ -120,14 +119,14 @@ def main(job_title):
 
     return salary_data
 
-#endregion
 
 
 if __name__ == '__main__':
     start = time.perf_counter()
     positions = ['software-engineer-i','data-scientist-i', 'devops-engineer-i']
-    for position in positions:
-        main(position)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        res = executor.map(main, positions)
+        print(list(res))
 
     print(f'all programs took {round((time.perf_counter() - start) / 60, 2)} minutes to run')
 
